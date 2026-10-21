@@ -1736,7 +1736,7 @@ orderForm?.addEventListener('submit', async function(e) {
       const closeBtn = overlay.querySelector('button');
       if (closeBtn) closeBtn.addEventListener('click', close, { once: true });
     }
-    if (window.fbq) window.fbq('track', 'Lead', { currency: 'BDT', value: data.totalAmount });
+    if (window.fbq) window.fbq('track', 'Purchase', { currency: 'BDT', value: data.totalAmount });
     if (window.gtag) window.gtag('event', 'generate_lead', { currency: 'BDT', value: data.totalAmount });
     orderForm.reset();
     updateTotals();
