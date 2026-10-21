@@ -1618,7 +1618,7 @@ function startSlider(){clearInterval(sliderTimer);const track=document.querySele
 }
 let initializedTracking={pixel:'',ga:''};
 function initTracking(){let pix=String(state.pixelId||'').trim(), ga=String(state.gaId||'').trim();
- if(/^\d{8,20}$/.test(pix)&&!initializedTracking.pixel){initializedTracking.pixel=pix;(function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=true;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=true;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)})(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');window.fbq?.('init',pix);window.fbq?.('track','PageView');}
+ if(/^\d{8,20}$/.test(pix)&&!initializedTracking.pixel){initializedTracking.pixel=pix;(function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=true;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=true;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)})(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');window.fbq?.('init',pix);window.fbq?.('track','PageView');window.fbq?.('track','ViewContent',{content_name:'বীজ বিচিত্রা - শাকসবজি বীজের কম্বো প্যাক',content_type:'product',currency:'BDT',value:Number(state.packages?.[0]?.price)||0});}
  if(/^G-[A-Z0-9]+$/.test(ga)&&!initializedTracking.ga){initializedTracking.ga=ga;window.dataLayer=window.dataLayer||[];window.gtag=function(){window.dataLayer.push(arguments)};window.gtag('js',new Date());window.gtag('config',ga);const scr=document.createElement('script');scr.async=true;scr.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(ga);document.head.append(scr);}
 }
 function applySite(data){state={...structuredClone(initial),...data};const brand=document.querySelector('.garden-brand__name');if(brand){const words=(state.brand||initial.brand).trim().split(/\s+/);brand.replaceChildren(document.createTextNode((words.shift()||'বীজ')+' '));const accent=document.createElement('span');accent.textContent=words.join(' ')||'বিচিত্রা';brand.append(accent);}const subtitle=document.querySelector('.garden-brand__tagline');if(subtitle)subtitle.textContent=state.tagline||initial.tagline;document.querySelectorAll('.bb-footer-brandtext').forEach(x=>x.textContent=enc(state.brand));
@@ -1684,6 +1684,15 @@ orderForm?.addEventListener('submit', async function(e) {
     errorMessage('প্যাকেজ পাওয়া যায়নি।');
     return;
   }
+  // Track AddToCart when a valid order submission begins; Purchase remains tied to successful order processing.
+  if (window.fbq) window.fbq('track', 'AddToCart', {
+    content_name: pack.name || ('প্যাকেজ #' + (idx + 1)),
+    content_ids: [String(idx)],
+    content_type: 'product',
+    contents: [{ id: String(idx), quantity: 1, item_price: Number(pack.price) || 0 }],
+    currency: 'BDT',
+    value: (Number(pack.price) || 0) + (Number(state.deliveryCharge) || 0)
+  });
   formBusy = true;
   submitBtn.disabled = true;
   const oldText = submitBtn.textContent;
