@@ -1908,7 +1908,8 @@ applySite(initial);
   }
 
   function startAudio() {
-    if (isPlaying) return;
+    // Respect an explicit user choice to turn the background audio off.
+    if (isPlaying || audio.dataset.userMuted === 'true') return;
     audio.play().then(() => {
       isPlaying = true;
       updateBtnUI(true);
@@ -1930,11 +1931,14 @@ applySite(initial);
     e.preventDefault();
     e.stopPropagation();
     if (audio.paused) {
+      // Only an explicit tap on the sound button may turn audio back on.
+      audio.dataset.userMuted = 'false';
       audio.play().then(() => {
         isPlaying = true;
         updateBtnUI(true);
       }).catch(() => {});
     } else {
+      audio.dataset.userMuted = 'true';
       audio.pause();
       isPlaying = false;
       updateBtnUI(false);
