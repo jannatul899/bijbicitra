@@ -477,20 +477,45 @@
     padding:24px;
   }
   .order-confirm-overlay.show{display:flex;}
-  .order-confirm-box{color:#fff;max-width:340px;}
+  .order-confirm-box{
+    color:var(--ink);width:min(100%,560px);max-height:calc(100vh - 32px);overflow-y:auto;
+    background:#fff;border:1px solid rgba(255,255,255,.7);border-radius:26px;
+    padding:34px 30px 28px;box-shadow:0 18px 55px rgba(0,0,0,.24);
+    text-align:center;
+  }
   .order-confirm-box .tick{
-    width:84px;height:84px;border-radius:50%;background:var(--green-mid);
-    display:flex;align-items:center;justify-content:center;font-size:44px;
-    margin:0 auto 18px;box-shadow:0 10px 26px rgba(0,0,0,0.3);
+    width:66px;height:66px;border-radius:50%;background:var(--green-pale);color:var(--green-deep);
+    display:flex;align-items:center;justify-content:center;font-size:35px;
+    margin:0 auto 14px;border:1px solid var(--line);
   }
   .order-confirm-box h2{
-    font-family:'Baloo Da 2';font-size:24px;margin:0 0 10px;
+    font-family:'Baloo Da 2','Hind Siliguri',sans-serif;font-size:42px;line-height:1.25;
+    color:var(--green-deep);margin:0 0 24px;font-weight:800;letter-spacing:.2px;
   }
-  .order-confirm-box p{font-size:14px;opacity:0.9;margin:0 0 22px;line-height:1.6;}
+  .order-confirm-box p{
+    font-size:19px;color:#263b2d;margin:0 0 18px;line-height:1.95;
+    font-weight:500;text-align:left;
+  }
+  .order-confirm-box p.delivery-note{
+    background:#fff8e9;border:1px solid #f1d99e;border-left:5px solid #e5a52d;
+    border-radius:14px;padding:16px 18px;color:#49391d;font-weight:600;
+  }
+  .order-confirm-box p.closing-thanks{text-align:center;color:var(--green-deep);font-weight:800;font-size:21px;margin:22px 0 24px;}
   .order-confirm-box button{
-    background:#fff;color:var(--green-deep);border:none;font-weight:700;
-    font-size:14px;padding:12px 28px;border-radius:10px;cursor:pointer;
+    background:linear-gradient(180deg,#2f8a3f,#1f5c2e);color:#fff;border:none;font-weight:700;
+    font-size:15px;padding:12px 32px;border-radius:11px;cursor:pointer;
+    box-shadow:0 5px 14px rgba(31,92,46,.2);
   }
+  @media(max-width:520px){
+    .order-confirm-overlay{padding:14px;}
+    .order-confirm-box{width:100%;max-height:calc(100vh - 28px);padding:27px 20px 22px;border-radius:22px;}
+    .order-confirm-box .tick{width:60px;height:60px;font-size:32px;margin-bottom:12px;}
+    .order-confirm-box h2{font-size:37px;margin-bottom:20px;}
+    .order-confirm-box p{font-size:18px;line-height:1.85;margin-bottom:16px;}
+    .order-confirm-box p.delivery-note{padding:14px 15px;}
+    .order-confirm-box p.closing-thanks{font-size:19px;margin:20px 0 22px;}
+  }
+  @media(max-width:360px){.order-confirm-box{padding:23px 16px 19px}.order-confirm-box h2{font-size:34px}.order-confirm-box p{font-size:17px}}
 
 /* Reference-style two-column seed cards */
 .pkg-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:7px 8px;border:0;border-radius:0;overflow:visible;background:#fff;}
@@ -1634,11 +1659,14 @@ header.top.garden-header{background:linear-gradient(112deg,#003c28,var(--bb-admi
 <section class="section policy-section" id="shipping-policy">
 <div class="policy-content"><p class="section-lead">সারা বাংলাদেশে হোম ডেলিভারি দেওয়া হয়। অর্ডার নিশ্চিত করার পর ডেলিভারির সময় ও ঠিকানা-সংক্রান্ত তথ্য প্রয়োজনে ফোনে জানানো হবে। বর্তমান অফারে ডেলিভারি চার্জ প্রযোজ্য হলে তা অর্ডার নিশ্চিত করার আগে জানানো হবে।</p></div>
 </section>
-<div class="order-confirm-overlay" id="orderConfirmOverlay">
+<div class="order-confirm-overlay" id="orderConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="orderConfirmTitle">
 <div class="order-confirm-box">
-<div class="tick">✅</div>
-<h2>অর্ডারটি কনফার্ম হয়েছে!</h2>
-<p>ধন্যবাদ! আপনার অর্ডারটি আমরা পেয়েছি। শীঘ্রই আমাদের প্রতিনিধি আপনার সাথে যোগাযোগ করবেন।</p>
+<div class="tick" aria-hidden="true">✓</div>
+<h2 id="orderConfirmTitle">বীজ বিচিত্রা</h2>
+<p>ধন্যবাদ, আপনার অর্ডারটি সফলভাবে জমা হয়েছে। আমাদের অফিস থেকে আপনাকে কল করা হবে।</p>
+<p>আমরা আমাদের কাস্টমার দের কে ফ্রী ডেলিভারি দিচ্ছি। তার মানে এই নয় যে কুরিয়ারে পাঠাতে আমাদের খরচ হয় না।</p>
+<p class="delivery-note">আমরা টাকা খরচ করে কুরিয়ারে বুকিং দিয়ে থাকি তাই কোনো কারনে পার্সেল না নিতে পারলে ডেলিভারি চার্জ দিয়ে রিটার্ন করবেন।</p>
+<p class="closing-thanks">ধন্যবাদ, বীজ বিচিত্রার সাথে থাকার জন্য।</p>
 <button id="orderConfirmCloseBtn" type="button">ঠিক আছে</button>
 </div>
 </div><div id="siteStatus" role="status"></div></div>
