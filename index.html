@@ -1765,6 +1765,20 @@ orderForm?.addEventListener('submit', async function(e) {
     errorMessage('নাম, ১১ ডিজিটের মোবাইল নম্বর ও সম্পূর্ণ ঠিকানা লিখুন।');
     return;
   }
+
+  // ২৪ ঘণ্টায় একই নম্বর থেকে একটিমাত্র অর্ডার — ডুপ্লিকেট অর্ডার ঠেকাতে
+  try {
+    var lockPhone = q('phone').value.trim();
+    var lastOrderTs = Number(localStorage.getItem('bb_last_order_' + lockPhone) || 0);
+    var lockWaitMs = 24 * 60 * 60 * 1000 - (Date.now() - lastOrderTs);
+    if (lastOrderTs && lockWaitMs > 0) {
+      var lockHrs = Math.ceil(lockWaitMs / 3600000);
+      var lockHrsBn = String(lockHrs).replace(/[0-9]/g, function(d){ return '০১২৩৪৫৬৭৮৯'[Number(d)]; });
+      q('f-phone')?.classList.add('error');
+      errorMessage('এই মোবাইল নম্বর থেকে ইতিমধ্যে একটি অর্ডার করা হয়েছে। একই নম্বর থেকে ২৪ ঘণ্টায় একবারের বেশি অর্ডার করা যাবে না — প্রায় ' + lockHrsBn + ' ঘণ্টা পর আবার অর্ডার করতে পারবেন। জরুরি হলে অন্য নম্বর ব্যবহার করুন।');
+      return;
+    }
+  } catch (lockErr) { console.warn('Order lock check failed:', lockErr); }
   const selected = orderForm.querySelector('input[name=bbPackage]:checked');
   if (!selected) {
     errorMessage('প্যাকেজ নির্বাচন করুন।');
@@ -1815,6 +1829,8 @@ orderForm?.addEventListener('submit', async function(e) {
     } else {
       throw new Error('Telegram settings are missing');
     }
+
+    try { localStorage.setItem('bb_last_order_' + data.phone, String(Date.now())); } catch (lockSetErr) { console.warn('Order lock save failed:', lockSetErr); }
 
     // 2. Save to Firestore if available
     try {
