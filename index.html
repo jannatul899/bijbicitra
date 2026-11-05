@@ -1766,16 +1766,14 @@ orderForm?.addEventListener('submit', async function(e) {
     return;
   }
 
-  // ২৪ ঘণ্টায় একই নম্বর থেকে একটিমাত্র অর্ডার — ডুপ্লিকেট অর্ডার ঠেকাতে
+  // একই মোবাইল/ব্রাউজার থেকে ২৪ ঘণ্টায় একটিমাত্র অর্ডার — নম্বর যাই দেওয়া হোক
   try {
-    var lockPhone = q('phone').value.trim();
-    var lastOrderTs = Number(localStorage.getItem('bb_last_order_' + lockPhone) || 0);
+    var lastOrderTs = Number(localStorage.getItem('bb_last_order_device') || 0);
     var lockWaitMs = 24 * 60 * 60 * 1000 - (Date.now() - lastOrderTs);
     if (lastOrderTs && lockWaitMs > 0) {
       var lockHrs = Math.ceil(lockWaitMs / 3600000);
       var lockHrsBn = String(lockHrs).replace(/[0-9]/g, function(d){ return '০১২৩৪৫৬৭৮৯'[Number(d)]; });
-      q('f-phone')?.classList.add('error');
-      errorMessage('এই মোবাইল নম্বর থেকে ইতিমধ্যে একটি অর্ডার করা হয়েছে। একই নম্বর থেকে ২৪ ঘণ্টায় একবারের বেশি অর্ডার করা যাবে না — প্রায় ' + lockHrsBn + ' ঘণ্টা পর আবার অর্ডার করতে পারবেন। জরুরি হলে অন্য নম্বর ব্যবহার করুন।');
+      errorMessage('এই মোবাইল থেকে ইতিমধ্যে একটি অর্ডার করা হয়েছে। একই মোবাইল থেকে ২৪ ঘণ্টায় একবারের বেশি অর্ডার করা যাবে না — প্রায় ' + lockHrsBn + ' ঘণ্টা পর আবার অর্ডার করতে পারবেন।');
       return;
     }
   } catch (lockErr) { console.warn('Order lock check failed:', lockErr); }
@@ -1830,7 +1828,7 @@ orderForm?.addEventListener('submit', async function(e) {
       throw new Error('Telegram settings are missing');
     }
 
-    try { localStorage.setItem('bb_last_order_' + data.phone, String(Date.now())); } catch (lockSetErr) { console.warn('Order lock save failed:', lockSetErr); }
+    try { localStorage.setItem('bb_last_order_device', String(Date.now())); } catch (lockSetErr) { console.warn('Order lock save failed:', lockSetErr); }
 
     // 2. Save to Firestore if available
     try {
