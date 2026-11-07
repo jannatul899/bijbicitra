@@ -1711,7 +1711,7 @@ function startSlider(){clearInterval(sliderTimer);const track=document.querySele
 }
 let initializedTracking={pixel:'',ga:''};
 function initTracking(){let pix=String(state.pixelId||'').trim(), ga=String(state.gaId||'').trim();
- if(/^\d{8,20}$/.test(pix)&&!initializedTracking.pixel){initializedTracking.pixel=pix;(function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=true;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=true;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)})(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');window.fbq?.('init',pix);window.fbq?.('track','PageView');window.fbq?.('track','ViewContent',{content_name:'বীজ বিচিত্রা - শাকসবজি বীজের কম্বো প্যাক',content_type:'product',currency:'BDT',value:Number(state.packages?.[0]?.price)||0});}
+ if(/^\d{8,20}$/.test(pix)&&!initializedTracking.pixel){initializedTracking.pixel=pix;(function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=true;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=true;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)})(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');window.fbq?.('init',pix,window.bbExternalId?{external_id:window.bbExternalId}:undefined);window.fbq?.('track','PageView');window.fbq?.('track','ViewContent',{content_name:'বীজ বিচিত্রা - শাকসবজি বীজের কম্বো প্যাক',content_type:'product',currency:'BDT',value:Number(state.packages?.[0]?.price)||0});}
 }
 function applySite(data){state={...structuredClone(initial),...data};const brand=document.querySelector('.garden-brand__name');if(brand){const words=(state.brand||initial.brand).trim().split(/\s+/);brand.replaceChildren(document.createTextNode((words.shift()||'বীজ')+' '));const accent=document.createElement('span');accent.textContent=words.join(' ')||'বিচিত্রা';brand.append(accent);}const subtitle=document.querySelector('.garden-brand__tagline');if(subtitle)subtitle.textContent=state.tagline||initial.tagline;document.querySelectorAll('.bb-footer-brandtext').forEach(x=>x.textContent=enc(state.brand));
  let banner=document.querySelector('#heroBanner img')||document.querySelector('.hero img')||q('heroBanner')?.querySelector('img');if(banner&&state.heroUrl){banner.src=state.heroUrl;banner.style.display='block';}
@@ -1757,12 +1757,114 @@ async function sendTelegramOrder(token, chatId, o){
   }
 }
 
+// ===== Firebase / Firestore + Admin Panel (added 2026-11-07) =====
+// firebaseConfig is NOT a secret: it is public in the site code by design.
+// Real protection = Firebase login + Firestore security rules (admin only read/write).
+const BB_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDC3P_AMlktnmmk4WBPxlqb7R7ZUA7an84",
+  authDomain: "bijbichitra-74534.firebaseapp.com",
+  projectId: "bijbichitra-74534",
+  storageBucket: "bijbichitra-74534.firebasestorage.app",
+  messagingSenderId: "1042237880205",
+  appId: "1:1042237880205:web:3833b2597ab3c469b36fc4"
+};
+let bbDb = null;
+let bbFirebasePromise = null;
+function bbInitFirebase() {
+  if (bbFirebasePromise) return bbFirebasePromise;
+  bbFirebasePromise = new Promise(function(resolve) {
+    try {
+      if (!BB_FIREBASE_CONFIG.apiKey || BB_FIREBASE_CONFIG.apiKey.indexOf('PASTE') === 0) { resolve(null); return; }
+      const loadScript = function(src) {
+        return new Promise(function(res, rej) {
+          const sc = document.createElement('script');
+          sc.src = src; sc.onload = res; sc.onerror = rej;
+          document.head.appendChild(sc);
+        });
+      };
+      loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js')
+        .then(function() { return loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'); })
+        .then(function() {
+          if (!window.firebase) { resolve(null); return; }
+          if (!firebase.apps.length) firebase.initializeApp(BB_FIREBASE_CONFIG);
+          bbDb = firebase.firestore();
+          window.db = bbDb;
+          resolve(bbDb);
+          bbLoadSiteSettings();
+        })
+        .catch(function() { resolve(null); });
+    } catch (e) { resolve(null); }
+  });
+  return bbFirebasePromise;
+}
+// Panel-driven site settings (Phase 3): read once after Firebase is ready.
+// Any failure or missing doc leaves the site's built-in values untouched.
+function bbLoadSiteSettings() {
+  if (!bbDb) return;
+  bbDb.collection('settings').doc('site').get().then(function(snap) {
+    if (!snap.exists) return;
+    try { bbApplySiteSettings(snap.data() || {}); } catch (e) {}
+  }).catch(function() {});
+}
+function bbApplySiteSettings(s) {
+  let priceChanged = false;
+  if (typeof state !== 'undefined' && state && state.packages) {
+    if (Number(s.price1) > 0) { state.packages[0].price = Number(s.price1); priceChanged = true; }
+    if (Number(s.oldPrice1) > 0) state.packages[0].oldPrice = Number(s.oldPrice1);
+    if (state.packages[1]) {
+      if (Number(s.price2) > 0) { state.packages[1].price = Number(s.price2); priceChanged = true; }
+      if (Number(s.oldPrice2) > 0) state.packages[1].oldPrice = Number(s.oldPrice2);
+    }
+    if (s.deliveryCharge !== undefined && s.deliveryCharge !== null && !isNaN(Number(s.deliveryCharge))) {
+      state.deliveryCharge = Number(s.deliveryCharge); priceChanged = true;
+    }
+    if (priceChanged) {
+      try { renderPackages(); } catch (e) {}
+      try { updateTotals(); } catch (e) {}
+    }
+    if (s.helpline) {
+      state.whatsapp = String(s.helpline);
+      try {
+        document.querySelectorAll('a[href*="wa.me"]').forEach(function(a) {
+          a.href = a.href.replace(/wa\.me\/\d+/, 'wa.me/' + String(s.helpline).replace(/\D/g, ''));
+        });
+      } catch (e) {}
+    }
+  }
+  if (s.popupEnabled === false) {
+    const gate = document.getElementById('stockLimitedAudioGate');
+    if (gate) gate.remove();
+  } else {
+    if (s.popupTitle) { const t = document.getElementById('stockLimitedAudioTitle'); if (t) t.textContent = String(s.popupTitle); }
+    if (s.popupText) { const c = document.querySelector('#stockLimitedAudioGate .sl-copy'); if (c) c.textContent = String(s.popupText); }
+  }
+  if (s.voiceEnabled === false) {
+    window.bbVoiceOff = true;
+    const au = document.getElementById('bgAudio');
+    if (au) { try { au.pause(); } catch (e) {} au.remove(); }
+    const tb = document.getElementById('audioToggleBtn');
+    if (tb) tb.style.display = 'none';
+  }
+}
+try { bbInitFirebase(); } catch (e) {}
+
 // ===== Tracking upgrades (2026-11-06): fbclid capture, cookie helper, AddToCart on package selection =====
 function bbGetCookie(name) {
   try {
     const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
     return m ? decodeURIComponent(m[1]) : '';
   } catch (e) { return ''; }
+}
+// Persistent per-visitor External ID for Meta matching (added 2026-11-07): created once,
+// kept in localStorage; sent with the Pixel init / advanced matching and the CAPI Purchase.
+try {
+  window.bbExternalId = localStorage.getItem('bb_external_id') || '';
+  if (!window.bbExternalId) {
+    window.bbExternalId = 'bbv-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('bb_external_id', window.bbExternalId);
+  }
+} catch (e) {
+  if (!window.bbExternalId) window.bbExternalId = 'bbv-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 }
 try {
   const bbParams = new URLSearchParams(location.search);
@@ -1837,7 +1939,7 @@ orderForm?.addEventListener('submit', async function(e) {
   try {
     const phDigits = String(q('phone').value || '').replace(/\D/g, '');
     const phInt = phDigits.indexOf('880') === 0 ? phDigits : (phDigits.charAt(0) === '0' ? '880' + phDigits.slice(1) : phDigits);
-    if (window.fbq && state.pixelId && phInt) window.fbq('init', state.pixelId, { ph: phInt });
+    if (window.fbq && state.pixelId && phInt) { const amData = { ph: phInt }; if (window.bbExternalId) amData.external_id = window.bbExternalId; window.fbq('init', state.pixelId, amData); }
   } catch (amErr) {}
   if (window.fbq) window.fbq('track', 'InitiateCheckout', {
     content_name: pack.name || ('প্যাকেজ #' + (idx + 1)),
@@ -1872,23 +1974,37 @@ orderForm?.addEventListener('submit', async function(e) {
     // 1. Send Telegram Notification immediately
     const tgToken = String(state.telegramToken || '8868063218:AAFqclyInPamvWMYXSoNHHtmLQZ_RPRxDkQ').trim();
     const tgChat = String(state.telegramChatId || '6398460269').trim();
+    // Telegram is attempted first and its result noted; a Telegram failure alone
+    // no longer fails the order when Firestore saves it (Admin Panel flow, 2026-11-07).
+    let telegramSent = false;
     if (tgToken && tgChat) {
-      const telegramSent = await sendTelegramOrder(tgToken, tgChat, Object.assign({ id: orderId }, data));
-      if (!telegramSent) throw new Error('Telegram order delivery failed');
-    } else {
-      throw new Error('Telegram settings are missing');
+      try { telegramSent = await sendTelegramOrder(tgToken, tgChat, Object.assign({ id: orderId }, data)); } catch (tgErr) { telegramSent = false; }
     }
 
-    try { localStorage.setItem('bb_last_order_device', String(Date.now())); } catch (lockSetErr) { console.warn('Order lock save failed:', lockSetErr); }
-
-    // 2. Save to Firestore if available
+    // 2. Save to Firestore for the Admin Panel (panel fields included).
+    let firestoreSaved = false;
     try {
-      if (db) {
-        await db.collection('orders').add(Object.assign({}, data, { createdAt: firebase.firestore.FieldValue.serverTimestamp() }));
+      const fsDb = await Promise.race([
+        bbInitFirebase(),
+        new Promise(function(res) { setTimeout(function() { res(null); }, 6000); })
+      ]);
+      if (fsDb) {
+        await fsDb.collection('orders').add(Object.assign({}, data, {
+          telegramOk: telegramSent,
+          fraudChecked: false,
+          fraudNote: '',
+          entered: false,
+          consignmentId: '',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }));
+        firestoreSaved = true;
       }
     } catch(fsErr) {
       console.warn('Firestore write warning:', fsErr);
     }
+    if (!telegramSent && !firestoreSaved) throw new Error('Order delivery failed on both Telegram and Firestore');
+
+    try { localStorage.setItem('bb_last_order_device', String(Date.now())); } catch (lockSetErr) { console.warn('Order lock save failed:', lockSetErr); }
 
     const sMsg = q('successMsg');
     if (sMsg) {
@@ -1935,6 +2051,7 @@ orderForm?.addEventListener('submit', async function(e) {
           packagePrice: data.packagePrice,
           fbp: bbGetCookie('_fbp'),
           fbc: bbGetCookie('_fbc'),
+          externalId: window.bbExternalId || undefined,
           eventSourceUrl: location.href,
           testEventCode: bbTestCode || undefined
         })
@@ -1987,6 +2104,7 @@ applySite(initial);
   function startAudio() {
     // Respect an explicit user choice to turn the background audio off.
     if (isPlaying || audio.dataset.userMuted === 'true') return;
+    if (window.bbVoiceOff) return;
     audio.play().then(() => {
       isPlaying = true;
       updateBtnUI(true);
@@ -2059,7 +2177,7 @@ applySite(initial);
     activated=true;
     if(e){e.preventDefault();e.stopPropagation();}
     const audio=document.getElementById('bgAudio');
-    if(audio){
+    if(audio && !window.bbVoiceOff){
       try{audio.loop=true;audio.volume=0.85;}
       catch(err){}
       const playPromise=audio.play();
