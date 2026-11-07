@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>বীজ বিচিত্রা — Admin Panel</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{--green:#0c7545;--green-dark:#0a5c37;--accent:#ee7225;--bg:#f3f6f4;--card:#fff;--text:#1c2b23;--muted:#68766d;--border:#dde5df;--red:#dc2626;--amber:#b45309}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Hind Siliguri','Noto Sans Bengali',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+  header.top{position:sticky;top:0;z-index:10;background:var(--green);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  header.top h1{font-size:1.05rem;margin:0}
+  header.top .who{font-size:.8rem;opacity:.9}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:.9rem}
+  .btn{background:var(--green);color:#fff}
+  .btn:hover{background:var(--green-dark)}
+  .btn.light{background:#fff;color:var(--green);border:1.5px solid var(--green)}
+  .btn.grey{background:#eef2ef;color:var(--text);border:1px solid var(--border)}
+  .btn.danger{background:#fff;color:var(--red);border:1.5px solid #f3c2c2}
+  .btn.small{padding:6px 10px;font-size:.82rem}
+  .wrap{max-width:860px;margin:0 auto;padding:12px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+  input,select,textarea{font-family:inherit;font-size:.95rem;padding:9px 10px;border:1.5px solid var(--border);border-radius:8px;width:100%;background:#fff;color:var(--text)}
+  input:focus,textarea:focus{outline:2px solid #9fd4b6;border-color:var(--green)}
+  label{font-size:.85rem;font-weight:700;display:block;margin:10px 0 4px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center}
+  .stat b{font-size:1.25rem;display:block;color:var(--green-dark)}
+  .stat span{font-size:.78rem;color:var(--muted)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .chip{background:#fff;border:1.5px solid var(--border);color:var(--text);padding:6px 12px;border-radius:999px;font-size:.83rem;font-weight:700}
+  .chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row>*{flex:1}
+  .order{border-left:5px solid #cbd5cf}
+  .order.st-new{border-left-color:var(--accent)}
+  .order.st-fraud{border-left-color:#2563eb}
+  .order.st-entered{border-left-color:var(--green)}
+  .order h3{margin:0 0 2px;font-size:1rem}
+  .order .meta{font-size:.82rem;color:var(--muted)}
+  .order .addr{font-size:.92rem;margin:6px 0}
+  .badge{display:inline-block;font-size:.72rem;font-weight:800;padding:2px 8px;border-radius:999px;margin:2px 4px 2px 0}
+  .b-new{background:#fdeeda;color:#9a4a08}
+  .b-fraud{background:#e2ebfd;color:#1d4ed8}
+  .b-entered{background:#dcf2e5;color:var(--green-dark)}
+  .b-tg{background:#fde2e2;color:var(--red)}
+  .b-src{background:#eef2ef;color:var(--muted)}
+  .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .subform{background:#f7faf8;border:1px dashed var(--border);border-radius:10px;padding:10px;margin-top:10px}
+  .subform .row>*{flex:1}
+  .hidden{display:none!important}
+  .err{color:var(--red);font-size:.88rem;min-height:1.2em}
+  .ok{color:var(--green-dark);font-size:.88rem}
+  .login-box{max-width:380px;margin:8vh auto}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:#123b2a;color:#fff;padding:10px 18px;border-radius:999px;font-size:.9rem;font-weight:700;opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
+  .toast.show{opacity:1}
+  .sel-wrap{display:flex;align-items:flex-start;gap:10px}
+  .sel-wrap input[type=checkbox]{width:20px;height:20px;margin-top:2px;flex:none}
+  details.settings summary{cursor:pointer;font-weight:800;color:var(--green-dark)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  @media(max-width:560px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="loginView" class="wrap">
+  <div class="card login-box">
+    <h2 style="margin:0 0 4px;color:var(--green-dark)">🌱 বীজ বিচিত্রা — Admin Panel</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin:0 0 6px">শুধু admin-এর জন্য। আপনার email ও password দিয়ে login করুন।</p>
+    <label>Email</label>
+    <input id="loginEmail" type="email" autocomplete="username" placeholder="you@example.com">
+    <label>Password</label>
+    <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••">
+    <div class="err" id="loginErr"></div>
+    <button class="btn" id="loginBtn" style="width:100%;margin-top:6px">Login</button>
+  </div>
+</div>
+
+<div id="appView" class="hidden">
+  <header class="top">
+    <h1>🌱 বীজ বিচিত্রা — Admin Panel</h1>
+    <div>
+      <span class="who" id="whoEmail"></span>
+      <button class="btn light small" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><b id="statCount">০</b><span>অর্ডার (নির্বাচিত দিনে)</span></div>
+      <div class="stat"><b id="statTotal">০</b><span>মোট টাকা</span></div>
+      <div class="stat"><b id="statPending">০</b><span>এন্ট্রি বাকি</span></div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <input id="searchInput" type="search" placeholder="🔍 নাম / ফোন / Order ID দিয়ে খুঁজুন">
+        <input id="dateInput" type="date" style="max-width:190px;flex:none">
+      </div>
+      <div class="chips" id="chipRow">
+        <button class="chip on" data-f="all">সব</button>
+        <button class="chip" data-f="new">নতুন</button>
+        <button class="chip" data-f="fraud">ফ্রড চেক হয়েছে</button>
+        <button class="chip" data-f="notentered">এন্ট্রি হয়নি</button>
+        <button class="chip" data-f="entered">এন্ট্রি হয়েছে</button>
+        <button class="chip" data-f="tgfail">Telegram যায়নি</button>
+      </div>
+      <div class="row">
+        <button class="btn grey" id="exportBtn">📥 সিলেক্ট করা অর্ডার .xlsx Export (Steadfast format) — <span id="selCount">০</span>টা</button>
+      </div>
+    </div>
+
+    <details class="card settings" id="settingsBox">
+      <summary>⚙️ সাইটের সেটিংস (দাম, popup, voice — panel থেকে বদলানো যাবে)</summary>
+      <div class="grid2">
+        <div><label>১ প্যাকের দাম (টাকা)</label><input id="s_price1" type="number" min="0"></div>
+        <div><label>১ প্যাকের পুরনো দাম (কাটা দাম)</label><input id="s_oldPrice1" type="number" min="0"></div>
+        <div><label>২ প্যাকের দাম (টাকা)</label><input id="s_price2" type="number" min="0"></div>
+        <div><label>২ প্যাকের পুরনো দাম (কাটা দাম)</label><input id="s_oldPrice2" type="number" min="0"></div>
+        <div><label>ডেলিভারি চার্জ (টাকা)</label><input id="s_deliveryCharge" type="number" min="0"></div>
+        <div><label>হেল্পলাইন / WhatsApp নম্বর (8801…)</label><input id="s_helpline" type="text"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:14px"><input id="s_popupEnabled" type="checkbox" style="width:18px;height:18px"> "স্টক সীমিত" popup চালু রাখো</label>
+      <label>Popup-এর শিরোনাম</label>
+      <input id="s_popupTitle" type="text">
+      <label>Popup-এর লেখা</label>
+      <textarea id="s_popupText" rows="2"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:14px"><input id="s_voiceEnabled" type="checkbox" style="width:18px;height:18px"> Background voice চালু রাখো</label>
+      <div class="row" style="margin-top:12px;align-items:center">
+        <button class="btn" id="settingsSaveBtn">সেটিংস Save করো</button>
+        <span class="ok" id="settingsMsg"></span>
+      </div>
+      <p style="font-size:.8rem;color:var(--muted)">Save করলেই সাইটে কার্যকর হবে (কাস্টমারের পেজ নতুন করে খুললে)। কোনো ঘর খালি রাখলে সাইটের আগের মানই থাকবে।</p>
+    </details>
+
+    <div id="ordersList"></div>
+    <p id="emptyMsg" class="hidden" style="text-align:center;color:var(--muted);padding:24px">এই ফিল্টারে কোনো অর্ডার নেই।</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== Firebase config — NOT a secret (public by design; protection = login + rules) =====
+const BB_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDC3P_AMlktnmmk4WBPxlqb7R7ZUA7an84",
+  authDomain: "bijbichitra-74534.firebaseapp.com",
+  projectId: "bijbichitra-74534",
+  storageBucket: "bijbichitra-74534.firebasestorage.app",
+  messagingSenderId: "1042237880205",
+  appId: "1:1042237880205:web:3833b2597ab3c469b36fc4"
+};
+const PARCEL_NOTE = "প্যাকেজে ১৫টি প্যাকেটে মোট ২৫ আইটেমের বীজ আছে — কিছু প্যাকেটে ২ আইটেম, কিছু প্যাকেটে ১ আইটেম। ভিতরে টোকেন দেওয়া আছে। কাস্টমার বুঝতে না পারলে বুঝিয়ে দিবেন।";
+const FRAUD_CHECK_URL = "https://steadfast.com.bd/user/frauds/check";
+
+firebase.initializeApp(BB_FIREBASE_CONFIG);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let allOrders = [];           // [{id, ...data}]
+let filterChip = 'all';
+let selected = new Set();
+let openFormFor = null;       // order doc id whose fraud/entry form is open: {id, kind}
+
+const $ = (id) => document.getElementById(id);
+const bn = (n) => Number(n || 0).toLocaleString('bn-BD');
+function esc(t) {
+  return String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+async function copyText(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+  toast(okMsg || 'কপি হয়েছে ✓');
+}
+function orderStatus(o) {
+  if (o.entered) return 'entered';
+  if (o.fraudChecked) return 'fraud';
+  return 'new';
+}
+function statusBadge(o) {
+  const st = orderStatus(o);
+  if (st === 'entered') return '<span class="badge b-entered">এন্ট্রি হয়েছে</span>';
+  if (st === 'fraud') return '<span class="badge b-fraud">ফ্রড চেক হয়েছে</span>';
+  return '<span class="badge b-new">নতুন</span>';
+}
+function fmtTime(o) {
+  try {
+    if (o.createdAt && o.createdAt.toDate) return o.createdAt.toDate().toLocaleString('bn-BD', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
+  } catch (e) {}
+  return 'এখনই';
+}
+function sameDay(o, dateStr) {
+  if (!dateStr) return true;
+  try {
+    if (!o.createdAt || !o.createdAt.toDate) return false;
+    const d = o.createdAt.toDate();
+    const ymd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return ymd === dateStr;
+  } catch (e) { return false; }
+}
+function visibleOrders() {
+  const q = $('searchInput').value.trim().toLowerCase();
+  const dateStr = $('dateInput').value;
+  return allOrders.filter((o) => {
+    if (!sameDay(o, dateStr)) return false;
+    if (filterChip === 'new' && orderStatus(o) !== 'new') return false;
+    if (filterChip === 'fraud' && orderStatus(o) !== 'fraud') return false;
+    if (filterChip === 'entered' && orderStatus(o) !== 'entered') return false;
+    if (filterChip === 'notentered' && o.entered) return false;
+    if (filterChip === 'tgfail' && o.telegramOk !== false) return false;
+    if (q) {
+      const hay = (String(o.name || '') + ' ' + String(o.phone || '') + ' ' + String(o.orderId || '')).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+}
+function fullOrderText(o) {
+  return 'নাম: ' + (o.name || '') + '\nফোন: ' + (o.phone || '') + '\nঠিকানা: ' + (o.address || '') +
+    '\nপ্যাকেজ: ' + (o.packageName || '') + '\nমোট: ' + (o.totalAmount || 0) + ' টাকা\nOrder ID: ' + (o.orderId || '');
+}
+function render() {
+  const list = visibleOrders();
+  // stats over the selected date (ignoring chip/search)
+  const dateStr = $('dateInput').value;
+  const dayOrders = allOrders.filter((o) => sameDay(o, dateStr));
+  $('statCount').textContent = bn(dayOrders.length);
+  $('statTotal').textContent = bn(dayOrders.reduce((a, o) => a + (Number(o.totalAmount) || 0), 0)) + ' ৳';
+  $('statPending').textContent = bn(dayOrders.filter((o) => !o.entered).length);
+  $('selCount').textContent = bn(selected.size);
+  $('emptyMsg').classList.toggle('hidden', list.length > 0);
+  $('ordersList').innerHTML = list.map((o) => {
+    const st = orderStatus(o);
+    const isOpen = openFormFor && openFormFor.id === o._docId;
+    let html = '<div class="card order st-' + st + '"><div class="sel-wrap">' +
+      '<input type="checkbox" data-act="sel" data-id="' + o._docId + '"' + (selected.has(o._docId) ? ' checked' : '') + '>' +
+      '<div style="flex:1;min-width:0">' +
+      '<h3>' + esc(o.name) + ' — ' + bn(o.totalAmount) + ' ৳</h3>' +
+      '<div class="meta">' + esc(o.orderId) + ' · ' + fmtTime(o) + ' · ' + esc(o.packageName) + '</div>' +
+      '<div>' + statusBadge(o) +
+      (o.telegramOk === false ? '<span class="badge b-tg">Telegram যায়নি</span>' : '') +
+      '<span class="badge b-src">' + esc(o.source || 'website') + '</span></div>' +
+      '<div class="addr">📞 ' + esc(o.phone) + '<br>🏠 ' + esc(o.address) + '</div>';
+    if (o.fraudChecked) html += '<div class="meta">🛡️ ফ্রড চেক: ' + esc(o.fraudNote || '') + '</div>';
+    if (o.entered) html += '<div class="meta">🚚 কনসাইনমেন্ট: <b>' + esc(o.consignmentId || '') + '</b></div>';
+    html += '<div class="actions">' +
+      '<button class="btn small" data-act="copynum" data-id="' + o._docId + '">📞 নাম্বার কপি</button>' +
+      '<button class="btn grey small" data-act="copyfull" data-id="' + o._docId + '">📋 পুরো অর্ডার কপি</button>' +
+      '<button class="btn light small" data-act="fraud" data-id="' + o._docId + '">🛡️ ফ্রড চেক</button>' +
+      '<button class="btn light small" data-act="entry" data-id="' + o._docId + '">🚚 এন্ট্রি</button>' +
+      '<button class="btn danger small" data-act="del" data-id="' + o._docId + '">🗑️</button>' +
+      '</div>';
+    if (isOpen && openFormFor.kind === 'fraud') {
+      html += '<div class="subform"><b>ফ্রড চেকের ফলাফল লিখুন</b>' +
+        '<div class="row" style="margin-top:8px">' +
+        '<input type="number" id="frDelivered" min="0" placeholder="Delivered কয়টা" value="' + (o.fraudDelivered != null ? o.fraudDelivered : '') + '">' +
+        '<input type="number" id="frCancelled" min="0" placeholder="Cancelled কয়টা" value="' + (o.fraudCancelled != null ? o.fraudCancelled : '') + '">' +
+        '</div>' +
+        '<input type="text" id="frNote" placeholder="মন্তব্য (ঐচ্ছিক)" value="' + esc(o.fraudNote && o.fraudDelivered == null ? o.fraudNote : '') + '" style="margin-top:8px">' +
+        '<div class="row" style="margin-top:8px"><button class="btn small" data-act="fraudsave" data-id="' + o._docId + '">Save — চেক হয়েছে</button>' +
+        '<button class="btn grey small" data-act="closeform">বন্ধ করুন</button></div></div>';
+    }
+    if (isOpen && openFormFor.kind === 'entry') {
+      html += '<div class="subform"><b>Steadfast এন্ট্রি</b>' +
+        '<p style="font-size:.85rem;color:var(--muted);margin:6px 0">নিচের বাটনে পুরো তথ্য কপি করে Steadfast ফর্মে বসান, বুকিং শেষে কনসাইনমেন্ট ID-টা এখানে লিখে Save করুন।</p>' +
+        '<div class="row"><button class="btn grey small" data-act="copyfull" data-id="' + o._docId + '">📋 এন্ট্রির তথ্য কপি</button>' +
+        '<a href="https://steadfast.com.bd/user/consignment/create" target="_blank" rel="noopener"><button class="btn light small" type="button">Steadfast খুলুন ↗</button></a></div>' +
+        '<input type="text" id="enConsignment" placeholder="কনসাইনমেন্ট ID" value="' + esc(o.consignmentId || '') + '" style="margin-top:8px">' +
+        '<div class="row" style="margin-top:8px"><button class="btn small" data-act="entrysave" data-id="' + o._docId + '">Save — এন্ট্রি হয়েছে</button>' +
+        '<button class="btn grey small" data-act="closeform">বন্ধ করুন</button></div></div>';
+    }
+    html += '</div></div></div>';
+    return html;
+  }).join('');
+}
+
+// ===== Auth =====
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    $('loginView').classList.add('hidden');
+    $('appView').classList.remove('hidden');
+    $('whoEmail').textContent = user.email;
+    startOrdersListener();
+    loadSettings();
+  } else {
+    $('appView').classList.add('hidden');
+    $('loginView').classList.remove('hidden');
+  }
+});
+$('loginBtn').addEventListener('click', async () => {
+  $('loginErr').textContent = '';
+  try {
+    await auth.signInWithEmailAndPassword($('loginEmail').value.trim(), $('loginPass').value);
+  } catch (e) {
+    $('loginErr').textContent = 'Login হয়নি — email/password মিলিয়ে আবার চেষ্টা করুন।';
+  }
+});
+$('loginPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('loginBtn').click(); });
+$('logoutBtn').addEventListener('click', () => auth.signOut());
+
+// ===== Orders realtime =====
+let ordersUnsub = null;
+function startOrdersListener() {
+  if (ordersUnsub) return;
+  ordersUnsub = db.collection('orders').orderBy('createdAt', 'desc').limit(300)
+    .onSnapshot((snap) => {
+      allOrders = snap.docs.map((d) => Object.assign({ _docId: d.id }, d.data()));
+      render();
+    }, (err) => { console.error(err); toast('অর্ডার লোডে সমস্যা — rules/connection দেখুন'); });
+}
+
+// ===== Filters =====
+$('chipRow').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-f]');
+  if (!b) return;
+  filterChip = b.dataset.f;
+  document.querySelectorAll('#chipRow .chip').forEach((c) => c.classList.toggle('on', c === b));
+  render();
+});
+$('searchInput').addEventListener('input', render);
+$('dateInput').addEventListener('change', render);
+(function initDate() {
+  const d = new Date();
+  $('dateInput').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+})();
+
+// ===== Card actions =====
+function findOrder(docId) { return allOrders.find((o) => o._docId === docId); }
+$('ordersList').addEventListener('click', async (e) => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act;
+  const id = el.dataset.id;
+  const o = id ? findOrder(id) : null;
+  if (act === 'sel') { if (el.checked) selected.add(id); else selected.delete(id); $('selCount').textContent = bn(selected.size); return; }
+  if (act === 'closeform') { openFormFor = null; render(); return; }
+  if (!o) return;
+  if (act === 'copynum') copyText(o.phone || '', 'নাম্বার কপি হয়েছে ✓');
+  if (act === 'copyfull') copyText(fullOrderText(o), 'পুরো অর্ডার কপি হয়েছে ✓');
+  if (act === 'fraud') {
+    await copyText(o.phone || '', 'নাম্বার কপি হয়েছে — Steadfast-এ paste করুন');
+    window.open(FRAUD_CHECK_URL, '_blank');
+    openFormFor = { id: id, kind: 'fraud' };
+    render();
+  }
+  if (act === 'fraudsave') {
+    const dv = Number($('frDelivered').value || 0);
+    const cv = Number($('frCancelled').value || 0);
+    const extra = $('frNote').value.trim();
+    const note = 'Delivered ' + dv + ', Cancelled ' + cv + (extra ? ' — ' + extra : '');
+    await db.collection('orders').doc(id).update({ fraudChecked: true, fraudDelivered: dv, fraudCancelled: cv, fraudNote: note });
+    openFormFor = null;
+    toast('ফ্রড চেক সেভ হয়েছে ✓');
+  }
+  if (act === 'entry') { openFormFor = { id: id, kind: 'entry' }; render(); }
+  if (act === 'entrysave') {
+    const cid = $('enConsignment').value.trim();
+    if (!cid) { toast('আগে কনসাইনমেন্ট ID লিখুন'); return; }
+    await db.collection('orders').doc(id).update({ entered: true, consignmentId: cid });
+    openFormFor = null;
+    toast('এন্ট্রি সেভ হয়েছে ✓');
+  }
+  if (act === 'del') {
+    if (confirm('এই অর্ডারটা মুছে ফেলবেন? (' + (o.orderId || '') + ')')) {
+      await db.collection('orders').doc(id).delete();
+      selected.delete(id);
+      toast('মুছে ফেলা হয়েছে');
+    }
+  }
+});
+$('ordersList').addEventListener('change', (e) => {
+  const el = e.target.closest('[data-act="sel"]');
+  if (!el) return;
+  if (el.checked) selected.add(el.dataset.id); else selected.delete(el.dataset.id);
+  $('selCount').textContent = bn(selected.size);
+});
+
+// ===== Bulk .xlsx export (Steadfast template columns) =====
+$('exportBtn').addEventListener('click', () => {
+  const rows = allOrders.filter((o) => selected.has(o._docId));
+  if (!rows.length) { toast('আগে অন্তত একটা অর্ডার টিক দিন'); return; }
+  const aoa = [['Invoice', 'Name', 'Address', 'Phone', 'Amount', 'Note', 'Lot', 'Delivery Type', 'Contact Name', 'Contact Phone']];
+  rows.slice().reverse().forEach((o) => {
+    aoa.push([String(o.orderId || ''), String(o.name || ''), String(o.address || ''), String(o.phone || ''), Number(o.totalAmount) || 0, PARCEL_NOTE, 1, 'Home', '', '']);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  // Phone column as text so leading zero survives
+  rows.forEach((o, i) => {
+    const cell = ws['D' + (i + 2)];
+    if (cell) { cell.t = 's'; cell.v = String(o.phone || ''); }
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  XLSX.writeFile(wb, 'steadfast_bulk_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  toast(rows.length + 'টা অর্ডার export হয়েছে ✓');
+});
+
+// ===== Settings (Phase 3) =====
+async function loadSettings() {
+  try {
+    const snap = await db.collection('settings').doc('site').get();
+    if (!snap.exists) return;
+    const s = snap.data() || {};
+    if (s.price1 != null) $('s_price1').value = s.price1;
+    if (s.oldPrice1 != null) $('s_oldPrice1').value = s.oldPrice1;
+    if (s.price2 != null) $('s_price2').value = s.price2;
+    if (s.oldPrice2 != null) $('s_oldPrice2').value = s.oldPrice2;
+    if (s.deliveryCharge != null) $('s_deliveryCharge').value = s.deliveryCharge;
+    if (s.helpline != null) $('s_helpline').value = s.helpline;
+    $('s_popupEnabled').checked = s.popupEnabled !== false;
+    if (s.popupTitle != null) $('s_popupTitle').value = s.popupTitle;
+    if (s.popupText != null) $('s_popupText').value = s.popupText;
+    $('s_voiceEnabled').checked = s.voiceEnabled !== false;
+  } catch (e) {}
+}
+$('settingsSaveBtn').addEventListener('click', async () => {
+  const num = (id) => { const v = $(id).value.trim(); return v === '' ? null : Number(v); };
+  const data = {
+    price1: num('s_price1'), oldPrice1: num('s_oldPrice1'),
+    price2: num('s_price2'), oldPrice2: num('s_oldPrice2'),
+    deliveryCharge: num('s_deliveryCharge'),
+    helpline: $('s_helpline').value.trim(),
+    popupEnabled: $('s_popupEnabled').checked,
+    popupTitle: $('s_popupTitle').value.trim(),
+    popupText: $('s_popupText').value.trim(),
+    voiceEnabled: $('s_voiceEnabled').checked
+  };
+  Object.keys(data).forEach((k) => { if (data[k] === null) delete data[k]; });
+  await db.collection('settings').doc('site').set(data, { merge: true });
+  $('settingsMsg').textContent = 'Save হয়েছে ✓';
+  setTimeout(() => { $('settingsMsg').textContent = ''; }, 2500);
+});
+</script>
+</body>
+</html>
