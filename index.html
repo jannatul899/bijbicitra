@@ -1659,11 +1659,63 @@ header.top.garden-header{background:linear-gradient(112deg,#003c28,var(--bb-admi
 <section class="section policy-section" id="shipping-policy">
 <div class="policy-content"><p class="section-lead">সারা বাংলাদেশে হোম ডেলিভারি দেওয়া হয়। অর্ডার নিশ্চিত করার পর ডেলিভারির সময় ও ঠিকানা-সংক্রান্ত তথ্য প্রয়োজনে ফোনে জানানো হবে। বর্তমান অফারে ডেলিভারি চার্জ প্রযোজ্য হলে তা অর্ডার নিশ্চিত করার আগে জানানো হবে।</p></div>
 </section>
+<style id="bb-invoice-receipt-style">
+.invoice-receipt{background:#fffdf7;border:1.5px dashed #b9cfb4;border-radius:14px;padding:16px 16px 12px;margin:0 0 18px;text-align:left;color:#22392a;font-size:14px}
+.invoice-receipt .inv-head{text-align:center;border-bottom:1px solid #e3edde;padding-bottom:10px;margin-bottom:10px}
+.invoice-receipt .inv-brand{font-family:'Baloo Da 2','Hind Siliguri',sans-serif;font-size:24px;font-weight:800;color:#0c5a34;line-height:1.2}
+.invoice-receipt .inv-title{font-size:15px;font-weight:700;color:#33513e;margin-top:2px}
+.invoice-receipt .inv-cod{display:inline-block;margin-top:6px;background:#e8f6ec;color:#0c6b3a;border:1px solid #bfe3cb;border-radius:999px;padding:2px 12px;font-size:12px;font-weight:700}
+.invoice-receipt .inv-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;margin-bottom:8px}
+.invoice-receipt .inv-customer{background:#f4faf2;border:1px solid #e0ecdc;border-radius:10px;padding:9px 11px;line-height:1.65;font-size:13.5px;margin-bottom:10px;overflow-wrap:anywhere}
+.invoice-receipt .inv-customer span{color:#61755f}
+.invoice-receipt .inv-table{width:100%;border-collapse:collapse;font-size:14px}
+.invoice-receipt .inv-table th{text-align:left;color:#61755f;font-size:12.5px;border-bottom:1px solid #e3edde;padding:5px 2px}
+.invoice-receipt .inv-table td{padding:7px 2px;border-bottom:1px dashed #e7efe2;vertical-align:top}
+.invoice-receipt .inv-table small{color:#61755f}
+.invoice-receipt .inv-num{text-align:right;white-space:nowrap;font-weight:700}
+.invoice-receipt .inv-table th.inv-num{text-align:right}
+.invoice-receipt .inv-total-row td{border-bottom:none;font-weight:800;font-size:16px;color:#0c5a34;padding-top:10px}
+.invoice-receipt .inv-total-row .inv-num{color:#e06414;font-size:19px}
+.invoice-receipt .inv-pay{font-size:13.5px!important;text-align:left!important;margin:10px 0 4px!important;line-height:1.6!important}
+.invoice-receipt .inv-help{font-size:12.5px!important;text-align:left!important;color:#61755f;margin:0 0 10px!important;line-height:1.6!important}
+.invoice-receipt .inv-actions{text-align:center}
+.invoice-receipt .inv-btn{background:linear-gradient(180deg,#2f8a3f,#1f5c2e);color:#fff;border:none;font-weight:700;font-size:14px;padding:11px 22px;border-radius:11px;cursor:pointer;box-shadow:0 5px 14px rgba(31,92,46,.2)}
+.invoice-receipt .inv-shot{font-size:12px!important;text-align:center!important;color:#61755f;margin:8px 0 2px!important;line-height:1.55!important}
+@media print{
+  body *{visibility:hidden!important}
+  #invoiceReceipt,#invoiceReceipt *{visibility:visible!important}
+  #invoiceReceipt{position:absolute!important;left:0!important;top:0!important;width:100%!important;border:1px solid #999!important}
+  #invoiceReceipt .inv-actions{display:none!important}
+}
+.invoice-receipt .inv-btn-pdf{background:linear-gradient(180deg,#ee7225,#d95d0c);margin-bottom:8px}
+</style>
 <div class="order-confirm-overlay" id="orderConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="orderConfirmTitle">
 <div class="order-confirm-box">
 <div class="tick" aria-hidden="true">✓</div>
 <h2 id="orderConfirmTitle">বীজ বিচিত্রা</h2>
 <p>ধন্যবাদ, আপনার অর্ডারটি সফলভাবে জমা হয়েছে। আমাদের অফিস থেকে আপনাকে কল করা হবে।</p>
+<div class="invoice-receipt" id="invoiceReceipt">
+<div class="inv-head">
+<div class="inv-brand">🌱 বীজ বিচিত্রা</div>
+<div class="inv-title">ইনভয়েস / অর্ডার রসিদ</div>
+<div class="inv-cod">ক্যাশ অন ডেলিভারি</div>
+</div>
+<div class="inv-meta"><span>ইনভয়েস নং: <b id="invOrderId">—</b></span><span>তারিখ: <b id="invDate">—</b></span></div>
+<div class="inv-customer">
+<div><span>ক্রেতা:</span> <b id="invName">—</b></div>
+<div><span>মোবাইল:</span> <b id="invPhone">—</b></div>
+<div><span>ঠিকানা:</span> <span id="invAddress">—</span></div>
+</div>
+<table class="inv-table">
+<tr><th>বিবরণ</th><th class="inv-num">দাম</th></tr>
+<tr><td>২৫ প্রকার বীজের কম্বো প্যাক<br/><small id="invPackage">—</small></td><td class="inv-num" id="invPackagePrice">—</td></tr>
+<tr><td>ডেলিভারি চার্জ</td><td class="inv-num" id="invDelivery">—</td></tr>
+<tr class="inv-total-row"><td>সর্বমোট (ডেলিভারির সময় পরিশোধ)</td><td class="inv-num" id="invTotal">—</td></tr>
+</table>
+<p class="inv-pay">💵 পেমেন্ট: পণ্য হাতে পেয়ে ক্যাশ পরিশোধ করুন।</p>
+<p class="inv-help">যেকোনো প্রয়োজনে হেল্পলাইন: <b>01402820292</b></p>
+<div class="inv-actions"><button type="button" id="invPdfBtn" class="inv-btn inv-btn-pdf">📄 ইনভয়েস PDF ডাউনলোড করুন</button><br/><button type="button" id="invPrintBtn" class="inv-btn">🖨️ রসিদ প্রিন্ট করুন</button><p class="inv-shot">PDF বাটনে চাপলেই ইনভয়েসটি সরাসরি PDF ফাইল হিসেবে ডাউনলোড হবে। অথবা এই রসিদটির স্ক্রিনশট করে রাখুন — ডেলিভারির সময় ইনভয়েস নম্বরটি লাগতে পারে।</p></div>
+</div>
 <p>আমরা আমাদের কাস্টমার দের কে ফ্রী ডেলিভারি দিচ্ছি। তার মানে এই নয় যে কুরিয়ারে পাঠাতে আমাদের খরচ হয় না।</p>
 <p class="delivery-note">আমরা টাকা খরচ করে কুরিয়ারে বুকিং দিয়ে থাকি তাই কোনো কারনে পার্সেল না নিতে পারলে ডেলিভারি চার্জ দিয়ে রিটার্ন করবেন।</p>
 <p class="closing-thanks">ধন্যবাদ, বীজ বিচিত্রার সাথে থাকার জন্য।</p>
@@ -2013,9 +2065,88 @@ orderForm?.addEventListener('submit', async function(e) {
     }
     const overlay = q('orderConfirmOverlay');
     if (overlay) {
+      // Invoice receipt: fill it from this order before showing the overlay.
+      try {
+        const setT = (id, v) => { const el = q(id); if (el) el.textContent = v; };
+        setT('invOrderId', data.orderId);
+        setT('invDate', new Date().toLocaleString('bn-BD'));
+        setT('invName', data.name);
+        setT('invPhone', data.phone);
+        setT('invAddress', data.address);
+        setT('invPackage', data.packageName);
+        setT('invPackagePrice', money(data.packagePrice));
+        setT('invDelivery', Number(data.deliveryCharge) === 0 ? 'ফ্রি' : money(data.deliveryCharge));
+        setT('invTotal', money(data.totalAmount));
+        const bindPrint = (id) => { const b = q(id); if (b && !b.dataset.bound) { b.dataset.bound = '1'; b.addEventListener('click', function() { window.print(); }); } };
+        bindPrint('invPrintBtn');
+        const pdfBtn = q('invPdfBtn');
+        if (pdfBtn && !pdfBtn.dataset.bound) {
+          pdfBtn.dataset.bound = '1';
+          pdfBtn.addEventListener('click', async function() {
+            const oldText = pdfBtn.textContent;
+            pdfBtn.disabled = true;
+            pdfBtn.textContent = 'PDF তৈরি হচ্ছে…';
+            let holder = null;
+            try {
+              // Lazy-load html2pdf only when the customer actually taps download (page stays light).
+              if (!window.html2pdf) {
+                await new Promise(function(res, rej) {
+                  const s = document.createElement('script');
+                  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                  s.onload = res; s.onerror = rej;
+                  document.head.appendChild(s);
+                });
+              }
+              // IMPORTANT: capture a clean standalone clone with inline styles only.
+              // Capturing the receipt inside the fixed/scrollable overlay renders blank in some browsers.
+              const val = (id) => { const el = q(id); return el ? el.textContent : ''; };
+              const escH = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+              const oid = val('invOrderId').trim() || 'invoice';
+              const cloneHtml =
+                '<div style="font-family:\'Hind Siliguri\',sans-serif;background:#fffdf7;border:1.5px dashed #b9cfb4;border-radius:14px;padding:20px 18px;color:#22392a;width:520px;box-sizing:border-box">' +
+                '<div style="text-align:center;border-bottom:1px solid #e3edde;padding-bottom:10px;margin-bottom:10px">' +
+                '<div style="font-size:24px;font-weight:800;color:#0c5a34;line-height:1.2">🌱 বীজ বিচিত্রা</div>' +
+                '<div style="font-size:15px;font-weight:700;color:#33513e;margin-top:2px">ইনভয়েস / অর্ডার রসিদ</div>' +
+                '<div style="display:inline-block;margin-top:6px;background:#e8f6ec;color:#0c6b3a;border:1px solid #bfe3cb;border-radius:999px;padding:2px 12px;font-size:12px;font-weight:700">ক্যাশ অন ডেলিভারি</div></div>' +
+                '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px"><tr><td>ইনভয়েস নং: <b>' + escH(oid) + '</b></td><td style="text-align:right">তারিখ: <b>' + escH(val('invDate')) + '</b></td></tr></table>' +
+                '<div style="background:#f4faf2;border:1px solid #e0ecdc;border-radius:10px;padding:9px 11px;line-height:1.65;font-size:13.5px;margin-bottom:10px">' +
+                '<div>ক্রেতা: <b>' + escH(val('invName')) + '</b></div>' +
+                '<div>মোবাইল: <b>' + escH(val('invPhone')) + '</b></div>' +
+                '<div>ঠিকানা: ' + escH(val('invAddress')) + '</div></div>' +
+                '<table style="width:100%;border-collapse:collapse;font-size:14px">' +
+                '<tr><td style="color:#61755f;font-size:12.5px;border-bottom:1px solid #e3edde;padding:5px 2px">বিবরণ</td><td style="color:#61755f;font-size:12.5px;border-bottom:1px solid #e3edde;padding:5px 2px;text-align:right">দাম</td></tr>' +
+                '<tr><td style="padding:7px 2px;border-bottom:1px dashed #e7efe2">২৫ প্রকার বীজের কম্বো প্যাক<br><span style="color:#61755f;font-size:12.5px">' + escH(val('invPackage')) + '</span></td><td style="padding:7px 2px;border-bottom:1px dashed #e7efe2;text-align:right;font-weight:700;white-space:nowrap">' + escH(val('invPackagePrice')) + '</td></tr>' +
+                '<tr><td style="padding:7px 2px;border-bottom:1px dashed #e7efe2">ডেলিভারি চার্জ</td><td style="padding:7px 2px;border-bottom:1px dashed #e7efe2;text-align:right;font-weight:700;white-space:nowrap">' + escH(val('invDelivery')) + '</td></tr>' +
+                '<tr><td style="padding:10px 2px 2px;font-weight:800;font-size:16px;color:#0c5a34">সর্বমোট (ডেলিভারির সময় পরিশোধ)</td><td style="padding:10px 2px 2px;text-align:right;font-weight:800;font-size:19px;color:#e06414;white-space:nowrap">' + escH(val('invTotal')) + '</td></tr></table>' +
+                '<p style="font-size:13.5px;margin:10px 0 4px;line-height:1.6">💵 পেমেন্ট: পণ্য হাতে পেয়ে ক্যাশ পরিশোধ করুন।</p>' +
+                '<p style="font-size:12.5px;color:#61755f;margin:0;line-height:1.6">যেকোনো প্রয়োজনে হেল্পলাইন: <b>01402820292</b></p>' +
+                '</div>';
+              holder = document.createElement('div');
+              holder.style.cssText = 'position:absolute;top:0;left:0;z-index:-1;';
+              holder.innerHTML = cloneHtml;
+              document.body.appendChild(holder);
+              await new Promise(function(r) { setTimeout(r, 80); });
+              await window.html2pdf().set({
+                margin: 10,
+                filename: 'BijBichitra-Invoice-' + oid + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 520, windowWidth: 560 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+              }).from(holder.firstElementChild).save();
+            } catch (pdfErr) {
+              console.warn('PDF download failed, falling back to print:', pdfErr);
+              window.print();
+            } finally {
+              if (holder) holder.remove();
+              pdfBtn.disabled = false;
+              pdfBtn.textContent = oldText;
+            }
+          });
+        }
+      } catch (invErr) {}
       overlay.classList.add('show');
       const close = () => { overlay.classList.remove('show'); };
-      const closeBtn = overlay.querySelector('button');
+      const closeBtn = q('orderConfirmCloseBtn');
       if (closeBtn) closeBtn.addEventListener('click', close, { once: true });
     }
     if (window.fbq) window.fbq('track', 'Purchase', {
@@ -2252,8 +2383,6 @@ applySite(initial);
 .pkg-list>li:last-child .name{font-size:12px!important;width:100%!important;flex:none!important}
 .pkg-list>li:last-child .qty{align-self:flex-start!important;font-size:10.5px!important;padding:3px 9px!important}
 </style>
-</body></html>
-
 <script>
 (function(){
   const el=document.getElementById('slCountdownTime');
@@ -2270,3 +2399,4 @@ applySite(initial);
   setInterval(tick,1000);
 })();
 </script>
+</body></html>
