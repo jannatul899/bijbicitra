@@ -538,7 +538,7 @@ orderForm?.addEventListener('submit', async function(e) {
   try {
     const phDigits = String(q('phone').value || '').replace(/\D/g, '');
     const phInt = phDigits.indexOf('880') === 0 ? phDigits : (phDigits.charAt(0) === '0' ? '880' + phDigits.slice(1) : phDigits);
-    if (window.fbq && state.pixelId && phInt) { const amData = { ph: phInt }; if (window.bbExternalId) amData.external_id = window.bbExternalId; window.fbq('init', state.pixelId, amData); }
+    if (window.fbq && state.pixelId && phInt) { const amData = { ph: phInt }; try { const nmParts = String(q('name').value || '').trim().split(/\s+/); if (nmParts[0]) { amData.fn = nmParts[0].toLowerCase(); if (nmParts.length > 1) amData.ln = nmParts.slice(1).join(' ').toLowerCase(); } } catch (nmErr) {} if (window.bbExternalId) amData.external_id = window.bbExternalId; window.fbq('init', state.pixelId, amData); }
   } catch (amErr) {}
   if (window.fbq) window.fbq('track', 'InitiateCheckout', {
     content_name: pack.name || ('প্যাকেজ #' + (idx + 1)),
@@ -719,6 +719,8 @@ orderForm?.addEventListener('submit', async function(e) {
     try {
       let bbTestCode = '';
       try { bbTestCode = new URLSearchParams(location.search).get('capi_test') || localStorage.getItem('bb_capi_test') || ''; } catch (tcErr) {}
+      let bbDistrict = '';
+      try { bbDistrict = (q('district').value || '').trim(); } catch (distErr) {}
       fetch('/api/capi/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -728,6 +730,8 @@ orderForm?.addEventListener('submit', async function(e) {
           value: data.totalAmount,
           currency: 'BDT',
           phone: data.phone,
+          name: data.name || undefined,
+          district: bbDistrict || undefined,
           packageIndex: data.packageIndex,
           packageName: data.packageName,
           packagePrice: data.packagePrice,
